@@ -15,21 +15,21 @@ contract VoluntaryTax {
 
     using SafeMath for uint256;
     // Double check the address: https://gitcoin.co/grants/659/estonia-dao-aragon-integration
-    address payable public EstoniaTreasury = 0x614962025820c57D6AF5acff56B5879237dAf559;
-    uint public ppm;
+    // 0x614962025820c57D6AF5acff56B5879237dAf559
+    address payable public DAOPoolUBI;
+    uint public ppm; // parts per million
     uint public divisor = 1000000; // 1 million
     address payable public beneficiary;
-    address public owner;
 
-    constructor(uint _ppm, address payable _beneficiary) public {
-        owner = msg.sender;
+    constructor(uint _ppm, address payable _beneficiary, address payable _DAOPoolUBI) public {
         require(_ppm <= divisor, "the voluntary tax cannot be greater than 100%");
         ppm = _ppm;
+        DAOPoolUBI = _DAOPoolUBI;
         beneficiary = _beneficiary;
     }
 
     function() external payable {
-        EstoniaTreasury.transfer(msg.value.mul(ppm).div(divisor));
+        DAOPoolUBI.transfer(msg.value.mul(ppm).div(divisor));
         beneficiary.transfer(msg.value.mul(divisor-ppm).div(divisor));
     }
 
@@ -37,20 +37,20 @@ contract VoluntaryTax {
     function returnERC20(address ERC20address) external {
         IERC20 token = IERC20(ERC20address);
         uint balance = token.balanceOf(address(this));
-        token.transfer(owner, balance);
+        token.transfer(beneficiary, balance);
     }
 }
 
 contract VoluntaryTaxFactory {
-    address public EnsSubdomainFactoryAddress = 0xfbbfFCeFCFC92093840AE72932c30231b96F2f93;
     IEnsSubdomainFactory public EnsSubdomainFactory;
 
-    constructor() public {
+    constructor(address EnsSubdomainFactoryAddress) public {
         EnsSubdomainFactory = IEnsSubdomainFactory(EnsSubdomainFactoryAddress);
     }
 
-    function deployNew(uint ppm, address payable beneficiary, string memory subdomain) public {
-        VoluntaryTax deployed = new VoluntaryTax(ppm, beneficiary);
-        EnsSubdomainFactory.newSubdomain(subdomain, "estoniaropsten", msg.sender, address(deployed));
+    function deployNew(uint ppm, address payable beneficiary, address payable DAOPoolUBI, string memory domain, string memory subdomain) public returns(address) {
+        VoluntaryTax deployed = new VoluntaryTax(ppm, beneficiary, DAOPoolUBI);
+        EnsSubdomainFactory.newSubdomain(subdomain, domain, msg.sender, address(deployed));
+        return address(deployed);
     }
 }
