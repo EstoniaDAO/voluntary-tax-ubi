@@ -8,9 +8,9 @@ const MockEnsResolver = artifacts.require('MockEnsResolver')
 contract('VoluntaryTaxFactory', async function(accounts) {
 
     const creator = accounts[0]
-    const alice = accounts[1];
-    const bob = accounts[2];
-    const charlie = accounts[3];
+    const beneficiary = accounts[1];
+    const beneficiary2 = accounts[2];
+    const alice = accounts[3];
 
     const estoniaTreasury = accounts[9];
 
@@ -26,10 +26,38 @@ contract('VoluntaryTaxFactory', async function(accounts) {
 
         let voluntaryTaxFactoryInstance  = await VoluntaryTaxFactory.new(EnsSubdomainFactoryInstance.address, { from: creator } );
 
-        let deployed = await voluntaryTaxFactoryInstance.deployNew(10000, alice, estoniaTreasury, "estoniadao", "hacker");
+        await voluntaryTaxFactoryInstance.deployNew(10000, beneficiary, estoniaTreasury, "estoniadao", "hacker");
 
-        console.log(deployed);
+        // THINK / TODO / FIXME: I have no idea how to retrieve the address better
+        var howMany = await voluntaryTaxFactoryInstance.getCount.call(estoniaTreasury);
+        var result = await voluntaryTaxFactoryInstance.voluntaryTaxDeployments.call(estoniaTreasury, howMany-1)
 
+        console.log(howMany);
+        console.log(result);
+
+        await web3.eth.sendTransaction({from: alice, to: result.deployed, value: toWei("1")});
+        var beneficiaryETH =  await web3.eth.getBalance(beneficiary);
+        var estoniaTreasuryETH = await web3.eth.getBalance(estoniaTreasury);
+
+        assert.equal(beneficiaryETH, toWei("100.99"), "Beneficiary should get 99%")
+        assert.equal(estoniaTreasuryETH, toWei("100.01"), "Estonia DAO should get 1%")
+
+        // ••••••••••••• SECOND VOLUNTARY TAX GUY •••••••••••••••
+
+        await voluntaryTaxFactoryInstance.deployNew(20000, beneficiary2, estoniaTreasury, "estoniadao", "hacker2");
+
+        var howMany = await voluntaryTaxFactoryInstance.getCount.call(estoniaTreasury);
+        var result = await voluntaryTaxFactoryInstance.voluntaryTaxDeployments.call(estoniaTreasury, howMany-1)
+
+        console.log(howMany);
+        console.log(result);
+
+        await web3.eth.sendTransaction({from: alice, to: result.deployed, value: toWei("1")});
+        var beneficiaryETH =  await web3.eth.getBalance(beneficiary2);
+        var estoniaTreasuryETH = await web3.eth.getBalance(estoniaTreasury);
+
+        assert.equal(beneficiaryETH, toWei("100.98"), "Beneficiary2 should get 98% (of the second transaction)")
+        assert.equal(estoniaTreasuryETH, toWei("100.03"), "Estonia DAO should get 2% (of the second transaction)")
     });
 
   })

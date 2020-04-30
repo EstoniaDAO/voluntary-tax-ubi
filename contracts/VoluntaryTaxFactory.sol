@@ -24,8 +24,8 @@ contract VoluntaryTax {
     constructor(uint _ppm, address payable _beneficiary, address payable _DAOPoolUBI) public {
         require(_ppm <= divisor, "the voluntary tax cannot be greater than 100%");
         ppm = _ppm;
-        DAOPoolUBI = _DAOPoolUBI;
         beneficiary = _beneficiary;
+        DAOPoolUBI = _DAOPoolUBI;
     }
 
     function() external payable {
@@ -48,9 +48,27 @@ contract VoluntaryTaxFactory {
         EnsSubdomainFactory = IEnsSubdomainFactory(EnsSubdomainFactoryAddress);
     }
 
-    function deployNew(uint ppm, address payable beneficiary, address payable DAOPoolUBI, string memory domain, string memory subdomain) public returns(address) {
+    mapping(address => Deployment[]) public voluntaryTaxDeployments;
+
+    function getCount(address treasury) public view returns(uint count) {
+        Deployment[] memory deployments = voluntaryTaxDeployments[treasury];
+        return deployments.length;
+    }
+
+    struct Deployment {
+        address deployer;
+        address beneficiary;
+        address deployed;
+        string subdomain;
+        string domain;
+        uint256 ppm;
+    }
+
+    function deployNew(uint ppm, address payable beneficiary, address payable DAOPoolUBI, string memory domain, string memory subdomain) public {
         VoluntaryTax deployed = new VoluntaryTax(ppm, beneficiary, DAOPoolUBI);
         EnsSubdomainFactory.newSubdomain(subdomain, domain, msg.sender, address(deployed));
-        return address(deployed);
+
+        Deployment memory deployment = Deployment({deployer:msg.sender, beneficiary:beneficiary, deployed: address(deployed), subdomain:subdomain, domain:domain, ppm: ppm });
+        voluntaryTaxDeployments[DAOPoolUBI].push(deployment);
     }
 }
