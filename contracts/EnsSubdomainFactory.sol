@@ -1,8 +1,4 @@
-/**
- *Submitted for verification at Etherscan.io on 2020-04-27
-*/
-
-pragma solidity ^0.4.24;
+pragma solidity >=0.4.24;
 
 // ---------------------------------------------------------------------------------------------------
 // EnsSubdomainFactory - allows creating and configuring custom ENS subdomains with one contract call.
@@ -15,19 +11,19 @@ pragma solidity ^0.4.24;
 * @title EnsRegistry
 * @dev Extract of the interface for ENS Registry
 */
-contract EnsRegistry {
-	function setOwner(bytes32 node, address owner) public;
-	function setSubnodeOwner(bytes32 node, bytes32 label, address owner) public;
-	function setResolver(bytes32 node, address resolver) public;
-	function owner(bytes32 node) public view returns (address);
+interface EnsRegistry {
+	function setOwner(bytes32 node, address owner) external;
+	function setSubnodeOwner(bytes32 node, bytes32 label, address owner) external;
+	function setResolver(bytes32 node, address resolver) external;
+	function owner(bytes32 node) external view returns (address);
 }
 
 /**
 * @title EnsResolver
 * @dev Extract of the interface for ENS Resolver
 */
-contract EnsResolver {
-	function setAddr(bytes32 node, address addr) public;
+interface EnsResolver {
+	function setAddr(bytes32 node, address addr) external;
 }
 
 /**
@@ -74,13 +70,13 @@ contract EnsSubdomainFactory {
 	 * @param _owner - address that will become owner of this new subdomain
 	 * @param _target - address that this new domain will resolve to
 	 */
-	function newSubdomain(string _subdomain, string _domain, address _owner, address _target) public {
+	function newSubdomain(string memory _subdomain, string memory _domain, address _owner, address _target) public {
 		//create namehash for the domain
 		bytes32 domainNamehash = keccak256(abi.encodePacked(ethNamehash, keccak256(abi.encodePacked(_domain))));
 		//make sure this contract owns the domain
 		
-		
-		// SHIT FORGOT ABOUT THAT
+		// ⚡️⚡️⚡️
+		// THE ONLY CHANGE FROM THE ORIGINAL CONTRACT
 		// require(registry.owner(domainNamehash) == address(this), "this contract should own the domain");
 		
 		
@@ -93,7 +89,7 @@ contract EnsSubdomainFactory {
 		//create new subdomain, temporarily this smartcontract is the owner
 		registry.setSubnodeOwner(domainNamehash, subdomainLabelhash, address(this));
 		//set public resolver for this domain
-		registry.setResolver(subdomainNamehash, resolver);
+		registry.setResolver(subdomainNamehash, address(resolver));
 		//set the destination address
 		resolver.setAddr(subdomainNamehash, _target);
 		//change the ownership back to requested owner
@@ -106,7 +102,7 @@ contract EnsSubdomainFactory {
 	 * @dev Returns the owner of a domain (e.g. "startonchain.eth"),
 	 * @param _domain - domain name e.g. "startonchain"
 	 */
-	function domainOwner(string _domain) public view returns(address) {
+	function domainOwner(string memory _domain) public view returns(address) {
 		bytes32 namehash = keccak256(abi.encodePacked(ethNamehash, keccak256(abi.encodePacked(_domain))));
 		return registry.owner(namehash);
 	}
@@ -116,7 +112,7 @@ contract EnsSubdomainFactory {
 	 * @param _subdomain - sub domain name only e.g. "radek"
 	 * @param _domain - parent domain name e.g. "startonchain"
 	 */
-	function subdomainOwner(string _subdomain, string _domain) public view returns(address) {
+	function subdomainOwner(string memory _subdomain, string memory _domain) public view returns(address) {
 		bytes32 domainNamehash = keccak256(abi.encodePacked(ethNamehash, keccak256(abi.encodePacked(_domain))));
 		bytes32 subdomainNamehash = keccak256(abi.encodePacked(domainNamehash, keccak256(abi.encodePacked(_subdomain))));
 		return registry.owner(subdomainNamehash);
@@ -147,7 +143,7 @@ contract EnsSubdomainFactory {
 	 */
 	function updateRegistry(EnsRegistry _registry) public onlyOwner {
 		require(registry != _registry, "new registry should be different from old");
-		emit RegistryUpdated(registry, _registry);
+		emit RegistryUpdated(address(registry), address(_registry));
 		registry = _registry;
 	}
 
@@ -157,7 +153,7 @@ contract EnsSubdomainFactory {
 	 */
 	function updateResolver(EnsResolver _resolver) public onlyOwner {
 		require(resolver != _resolver, "new resolver should be different from old");
-		emit ResolverUpdated(resolver, _resolver);
+		emit ResolverUpdated(address(resolver), address(_resolver));
 		resolver = _resolver;
 	}
 
