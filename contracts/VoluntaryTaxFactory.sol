@@ -48,7 +48,8 @@ contract VoluntaryTaxFactory {
         EnsSubdomainFactory = IEnsSubdomainFactory(EnsSubdomainFactoryAddress);
     }
 
-    mapping(address => Deployment[]) public voluntaryTaxDeployments;
+    mapping(address => Deployment[]) public voluntaryTaxDeployments; // Estonia treasury keeping track
+    mapping(address => address) public guys; // I can totally imagine that someone has multiple, for now only one
 
     function getCount(address treasury) public view returns(uint count) {
         Deployment[] memory deployments = voluntaryTaxDeployments[treasury];
@@ -65,6 +66,9 @@ contract VoluntaryTaxFactory {
     }
 
     function deployNew(uint ppm, address payable beneficiary, address payable DAOPoolUBI, string memory domain, string memory subdomain) public {
+        // require (guys[msg.sender] == address(0x0), "each address can have only one");
+        guys[msg.sender] = DAOPoolUBI;
+
         VoluntaryTax deployed = new VoluntaryTax(ppm, beneficiary, DAOPoolUBI);
         EnsSubdomainFactory.newSubdomain(subdomain, domain, msg.sender, address(deployed));
 

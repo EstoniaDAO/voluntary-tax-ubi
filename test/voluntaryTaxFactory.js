@@ -60,4 +60,17 @@ contract('VoluntaryTaxFactory', async function(accounts) {
         assert.equal(estoniaTreasuryETH, toWei("100.03"), "Estonia DAO should get 2% (of the second transaction)")
     });
 
+    it('Cannot do more than once', async () => {
+        let voluntaryTaxFactoryInstance  = await VoluntaryTaxFactory.new(EnsSubdomainFactoryInstance.address, { from: creator } );
+
+        await voluntaryTaxFactoryInstance.deployNew(10000, beneficiary, estoniaTreasury, "estoniadao", "hacker");
+
+        let treasury = await voluntaryTaxFactoryInstance.guys.call(beneficiary);
+
+        console.log(treasury);
+
+
+        // await expectThrow( voluntaryTaxFactoryInstance.deployNew(10000, beneficiary, estoniaTreasury, "estoniadao", "hacker2") )
+    });
+
   })
